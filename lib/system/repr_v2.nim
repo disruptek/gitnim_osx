@@ -1,7 +1,9 @@
+include system/inclrtl
+
 proc isNamedTuple(T: typedesc): bool {.magic: "TypeTrait".}
   ## imported from typetraits
 
-proc distinctBase(T: typedesc): typedesc {.magic: "TypeTrait".}
+proc distinctBase(T: typedesc, recursive: static bool = true): typedesc {.magic: "TypeTrait".}
   ## imported from typetraits
 
 proc repr*(x: NimNode): string {.magic: "Repr", noSideEffect.}
@@ -65,6 +67,11 @@ proc repr*[Enum: enum](x: Enum): string {.magic: "EnumToStr", noSideEffect.}
   ##
   ## If a `repr` operator for a concrete enumeration is provided, this is
   ## used instead. (In other words: *Overwriting* is possible.)
+
+proc reprDiscriminant*(e: int): string {.compilerproc.} =
+  # repr and reprjs can use `PNimType` to symbolize `e`; making this work here
+  # would require a way to pass the set of enum stringified values to cgen.
+  $e
 
 proc repr*(p: pointer): string =
   ## repr of pointer as its hexadecimal value

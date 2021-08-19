@@ -31,7 +31,7 @@ the `destructors <destructors.html>`_ document.
 This document describes the lexis, the syntax, and the semantics of the Nim language.
 
 To learn how to compile Nim programs and generate documentation see
-`Compiler User Guide <nimc.html>`_ and `DocGen Tools Guide <docgen.html>`_.
+the `Compiler User Guide <nimc.html>`_ and the `DocGen Tools Guide <docgen.html>`_.
 
 The language constructs are explained using an extended BNF, in which `(a)*`
 means 0 or more `a`'s, `a+` means 1 or more `a`'s, and `(a)?` means an
@@ -583,12 +583,11 @@ In the following examples, `-1` is parsed as two separate tokens
   "abc"-1
 
 
-There exists a literal for each numerical type that is
-defined. The suffix starting with an apostrophe ('\'') is called a
+The suffix starting with an apostrophe ('\'') is called a
 `type suffix`:idx:. Literals without a type suffix are of an integer type
 unless the literal contains a dot or `E|e` in which case it is of
 type `float`. This integer type is `int` if the literal is in the range
-`low(i32)..high(i32)`, otherwise it is `int64`.
+`low(int32)..high(int32)`, otherwise it is `int64`.
 For notational convenience, the apostrophe of a type suffix
 is optional if it is not ambiguous (only hexadecimal floating-point literals
 with a type suffix can be ambiguous).
@@ -619,10 +618,9 @@ notation:
 `0B0_10001110100_0000101001000111101011101111111011000101001101001001'f64`
 is approximately 1.72826e35 according to the IEEE floating-point standard.
 
-Literals are bounds checked so that they fit the datatype. Non-base-10
-literals are used mainly for flags and bit pattern representations, therefore
-bounds checking is done on bit width, not value range. If the literal fits in
-the bit width of the datatype, it is accepted.
+Literals must match the datatype, for example, `333'i8` is an invalid literal.
+Non-base-10 literals are used mainly for flags and bit pattern representations,
+therefore the checking is done on bit width and not on value range.
 Hence: 0b10000000'u8 == 0x80'u8 == 128, but, 0b10000000'i8 == 0x80'i8 == -1
 instead of causing an overflow error.
 
@@ -1980,8 +1978,7 @@ details like this when mixing garbage-collected data with unmanaged memory.
 Procedural type
 ---------------
 A procedural type is internally a pointer to a procedure. `nil` is
-an allowed value for variables of a procedural type. Nim uses procedural
-types to achieve `functional`:idx: programming techniques.
+an allowed value for a variable of a procedural type.
 
 Examples:
 
@@ -2494,8 +2491,8 @@ An expression `b` can be assigned to an expression `a` iff `a` is an
 `l-value` and `isImplicitlyConvertible(b.typ, a.typ)` holds.
 
 
-Overloading resolution
-======================
+Overload resolution
+===================
 
 In a call `p(args)` the routine `p` that matches best is selected. If
 multiple routines match equally well, the ambiguity is reported during
@@ -5835,6 +5832,27 @@ type `system.ForLoopStmt` can rewrite the entirety of a `for` loop:
 
   import std/macros
 
+  macro example(loop: ForLoopStmt) =
+    result = newTree(nnkForStmt)    # Create a new For loop.
+    result.add loop[^3]             # This is "item".
+    result.add loop[^2][^1]         # This is "[1, 2, 3]".
+    result.add newCall(bindSym"echo", loop[0])
+
+  for item in example([1, 2, 3]): discard
+
+Expands to:
+
+.. code-block:: nim
+  for item in items([1, 2, 3]):
+    echo item
+
+Another example:
+
+.. code-block:: nim
+    :test: "nim c $1"
+
+  import std/macros
+
   macro enumerate(x: ForLoopStmt): untyped =
     expectKind x, nnkForStmt
     # check if the starting count is specified:
@@ -5864,7 +5882,6 @@ type `system.ForLoopStmt` can rewrite the entirety of a `for` loop:
   # names for `a` and `b` here to avoid redefinition errors
   for a, b in enumerate(10, [1, 2, 3, 5]):
     echo a, " ", b
-
 
 
 Special Types
